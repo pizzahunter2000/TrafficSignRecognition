@@ -52,7 +52,70 @@ To achieve traffic sign recognition, the detection (segmentation) phase has to b
 
 ## 4. Algorithm
 
+This project will implement the second approach from above, namely the traditional image processing algorithm. The idea is recognizing the sign by its form - achieved by the _canny edge detection_ algorithm, respectively by _color based segmentation_, both results applied to a _shape detection_ algorithm. The 2 outputs from the 2 branches are integrated and a bounding box is calculated the contains the traffic sign.
+
+On the other hand, the type of the sign has to be determined by the shape of its border and by the color of it, respectively if this was not enough, its content. For this a _shape classification_ and a _color detection_ algorithm would be ideal.
+
 ## 5. Implementation
+
+Details of each step of the pipeline:
+
+1. Image Preprocessing - filters have to be added to enhance some properties of the image and clean it from noise.
+
+    1.1. Noise Filtering
+    
+    Median Filtering is applied to the original image so that it removes the unexpected and peak pixel values by choosing the median of the pixel's 8-neighbourhood.
+
+    The choice is made by sorting the neighbourhood elements and choosing the value in the middle, illustrated below:
+
+    ![alt text](median_filtering.png)
+
+    1.2. Contrast Enhancement
+
+    Contrast enhancement algorithms usually stratch the histogram of the image and modify the cumulative distribution function, increasing the spectrum of the colors.
+
+    However, the images have 3 color channels (BGR), therefore, they have to be converted to grayscale images before applying the contrast enhancement algorithm. The grayscale image's histogram will be modified and all 3 color channels will be modified relative to it.
+
+    For the BGR to grayscale conversion the NTSC formula is employed that represent's the people's relative perception of brightness of the 3 color channels: 0.299 * Red + 0.587 * Green + 0.114 * Blue.
+
+    After that, the histogram is stretched to cover the whole spectrum (from 0 to 255) and all the colors are interpolated from the old spectrum to the new one.
+
+    After the application this is how the 3 color's distribution will look like compared to the original:
+
+    ![alt text](distribution.png)
+
+2. Canny Edge Detection
+
+Edge detection is one way of detecting features in an image and it is a quite complex operation. Canny edge detection is an algorithm implemented in the OpenCV library that performs the desired algorithm and results in a similar image:
+
+![alt text](edges.png)
+
+3. Color Based Segmentation
+
+A different approach of detecting features is by creating 4 different images based on certain colors that are found on the traffic signs, more specifically, red, blue, yellow and black. By applying the correct threshold for the values of the colors, the algorithm will result in an image that displays only the pixels that were in the given range.
+
+For this a high-contrast image is needed and exploits the color property of the traffic signs.
+
+Before color segmentation:
+
+![alt text](noisy_image.png)
+
+After color segmentation and extraction the red component (image):
+
+![alt text](red.png)
+
+4. Shape Detection
+
+To apply shape detection algorithms simpler it is recommended to extract the contours of the color-segmented images. In this case, given as input the output of the color segmentation algorithm, all the white (object) pixels that have a black (background) pixel in their neighbourhood will be contour pixels (white) and all the others black.
+
+The result will look like this:
+
+![alt text](contour.png)
+
+5. Integrate Outputs
+
+6. Bounding Box Calculation
+
 
 ## 6. Evaluation & Result
 
