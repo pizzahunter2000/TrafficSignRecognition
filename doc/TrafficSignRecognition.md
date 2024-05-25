@@ -128,4 +128,4 @@ The result will look like this:
 
 [4] Canny edge detection: https://docs.opencv.org/4.x/da/d22/tutorial_py_canny.html
 
-[5]
+[5] Doubles-Peucker algorithm: https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
