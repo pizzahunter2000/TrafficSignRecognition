@@ -60,9 +60,9 @@ On the other hand, the type of the sign has to be determined by the shape of its
 
 Details of each step of the pipeline:
 
-1. Image Preprocessing - filters have to be added to enhance some properties of the image and clean it from noise.
+ 1. __Image Preprocessing__ - filters have to be added to enhance some properties of the image and clean it from noise.
 
-    1.1. Noise Filtering
+    1.1. __Noise Filtering__
     
     Median Filtering is applied to the original image so that it removes the unexpected and peak pixel values by choosing the median of the pixel's 8-neighbourhood.
 
@@ -70,7 +70,7 @@ Details of each step of the pipeline:
 
     ![alt text](median_filtering.png)
 
-    1.2. Contrast Enhancement
+    1.2. __Contrast Enhancement__
 
     Contrast enhancement algorithms usually stratch the histogram of the image and modify the cumulative distribution function, increasing the spectrum of the colors.
 
@@ -84,17 +84,11 @@ Details of each step of the pipeline:
 
     ![alt text](distribution.png)
 
-2. Canny Edge Detection
+    This method scales every color, thus, the resulting image will be darker than expected. Therefore, it's not used in this implementation.
 
-Edge detection is one way of detecting features in an image and it is a quite complex operation. Canny edge detection is an algorithm implemented in the OpenCV library that performs the desired algorithm and results in a similar image:
+3. __Color Based Segmentation__
 
-![alt text](edges.png)
-
-3. Color Based Segmentation
-
-A different approach of detecting features is by creating 4 different images based on certain colors that are found on the traffic signs, more specifically, red, blue, yellow and black. By applying the correct threshold for the values of the colors, the algorithm will result in an image that displays only the pixels that were in the given range.
-
-For this a high-contrast image is needed and exploits the color property of the traffic signs.
+This is an approach of detecting features by creating 4 different images based on certain colors that are found on the traffic signs, more specifically, red, blue, yellow and black. By applying the correct threshold for the values of the colors, the algorithm will result in an image that displays only the pixels that were in the given range.
 
 Before color segmentation:
 
@@ -104,7 +98,7 @@ After color segmentation and extraction the red component (image):
 
 ![alt text](red.png)
 
-4. Shape Detection
+3. __Shape Detection__
 
 To apply shape detection algorithms simpler it is recommended to extract the contours of the color-segmented images. In this case, given as input the output of the color segmentation algorithm, all the white (object) pixels that have a black (background) pixel in their neighbourhood will be contour pixels (white) and all the others black.
 
@@ -112,17 +106,70 @@ The result will look like this:
 
 ![alt text](contour.png)
 
-5. Integrate Outputs
+4. __Shape Classification__
 
-6. Bounding Box Calculation
+The next step of the pipeline is contour classification using the __Douglas-Peucker algorithm__ to get the number of nodes the polygon of the respective shape has and classifying it into the following categories: triangle (3 nodes), rectangle (4), stop sign (6 or 8) or complex shape.
 
+When this part return Triangle class, it is checked whether the center of gravity of the shape is located below the middle of the object's height, meaning that it is a _Normal triangle_, or above it, meaning it is _Upside down_.
+
+In case this algorithm returns complex shape, __Circle Hough Transform algorithm__ is called to decide if the the shape is a circle or not.
+
+Therefore, the classes that can be obtained from this classification are: Triangle (Upside Down), Triangle (Normal), Square, Rectangle, Stop, Circle, Complex shape or Unknown.
+
+ Bounding Box Detection
+
+This action is performed in the same functions as the shape classification and calculated based on the contour's maximum and minimum coordinates. It is crucial for localizing each traffic sign.
+
+5. __Traffic Sign Classification__
+
+Based on the color and the shape of the connected components, the traffic sign is derived using a nested if statement. The classes detectable are:
+- concrete traffic signs: Give way, Stop, Priority Road
+- group of signs: Warning/Danger sign, Prohibitory sign, Information sign and Mandatory sign.
+
+This is how the output of this segment looks like:
+
+![alt text](classification.png)
+
+6. __Filtering the Shapes__
+
+At the end of the pipeline a cleaning has to be made in order to remove the relatively small shapes, because in most of the cases they are noise. On the other hand, bounding boxes completely contained in another one are redundant and only the largest one is kept.
 
 ## 6. Evaluation & Result
 
+This is an example of how the pipeline performs on an image of ideal traffic signs:
+
+![alt text](example-0.png)
+
+According to this result, there are 2 miss-classifications and 2 missing classifications from 25 traffic signs. However, this does not represent the reality because it is a high-contrast image with low noise and white background.
+
+And this is how it performs on real-life images:
+
+![alt text](example-1.png)
+
+![alt text](example-2.png)
+
+As can be seen on these real-life examples, it does classify about 3/4 of the traffic signs that are in the first plain, however, not the ones that are in the background, because they are filtered out due to their size.
+
+On the other hand, this method classifies the flags or any other rectangular, triangular or round shape that has strong red, blue or yellow colors as traffic signs, for instance, the flag in the second example.
+
+### Conclusions
+
+As can be seen on the examples, working based on colors and contrasts of images is not always a good idea because many other objects will be detected as traffic sign that are not one, because of their color.
+
+Another factor that influences the precision and accuracy of the pipeline is the contact between 2 objects of similar colors that are detected, becuase they will be detected as one complex shape and will not be classified correctly. This could be solved using morphological operations, like _erosion_.
+
+A better method of implementation would be an edge-based detection instead of color-based detection because colors would not influence it. However, computationally it would be heavier.
+
+This implementation's slowest part is denoising the image that is not necessary if Canny edge detection is not used.
+
+Considering all these, an option for improvement would be the Preprocessing part, so that the contrast of the image would help identifying the colors found on traffic signs.
+
 ## 7. Sources
+[0] Github link to the project: https://github.com/pizzahunter2000/TrafficSignRecognition
+
 [1] Algorithm using Convolution Neural Nets: https://www.analyticsvidhya.com/blog/2021/12/traffic-signs-recognition-using-cnn-and-keras-in-python/
 
-[2] Comparison of ML solutions: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10223536/#:~:text=Traffic%20sign%20recognition%20can%20be%20divided%20into%20machine%20learning%20and,NN)%2C%20and%20decision%20trees.
+[2] Comparison of ML solutions: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10223536/#:~:text=Traffic%20sign%20recognition%20can%20be%20divided%20into%20machine%20learning%20and,NN%2C%20and%20decision%20trees.
 
 [3] Traditional Traffic Sign Segmentation pipeline: https://jq0112358.medium.com/traffic-sign-segmentation-with-classical-image-processing-methods-canny-edge-detection-color-8ff1096535db
 
